@@ -12,7 +12,6 @@ Birthday wishlist manager written in Chez Scheme using HTMX.
 * Setup
 ** Dependencies
 - Chez Scheme
-- SQLite3
 
 ** Using Guix
 Development environment can be entered with:

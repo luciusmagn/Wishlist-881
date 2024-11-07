@@ -2,5 +2,4 @@
              (gnu packages scheme))
 
 (specifications->manifest
- '("chez-scheme"
-   "sqlite"))
+ '("chez-scheme"))
