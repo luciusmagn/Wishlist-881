@@ -1,0 +1,29 @@
+#+title: Wishlist 881
+
+Birthday wishlist manager written in Chez Scheme using HTMX.
+
+* Features
+- Create birthday wishlists
+- Share them with others
+- Mark items as "will give"
+- Hide marked items from list creator
+- Prevent duplicate gifts
+
+* Setup
+** Dependencies
+- Chez Scheme
+- SQLite3
+
+** Using Guix
+Development environment can be entered with:
+#+begin_src shell
+guix shell -m manifest.scm
+#+end_src
+
+** Running
+From project root:
+#+begin_src shell
+chez --libdirs ./src --program run.ss
+#+end_src
+
+Server will start at =http://localhost:8080=
