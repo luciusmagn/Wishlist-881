@@ -1,28 +1,258 @@
 #+title: Wishlist 881
 
-Birthday wishlist manager written in Chez Scheme using HTMX.
+A birthday wishlist manager written in Chez Scheme using HTMX.
+
+This is an exercise of combining the frontend framework that makes React bros angry,
+with a backend language that makes JavaS
+
+* Warning
+#+begin_quote
+Only a fool would run this app in production
+#+end_quote
+
+This application was created for learning purposes and has several security issues:
+- Sessions are stored as plaintext files with predictable IDs
+- Passwords are stored in plaintext
+- No input validation
+- No rate limiting
+- No CSRF protection
 
 * Features
-- Create birthday wishlists
-- Share them with others
-- Mark items as "will give"
-- Hide marked items from list creator
-- Prevent duplicate gifts
+** Core Functionality
+- Create birthday wishlists and share them
+- Add items to your wishlists
+- Mark items as "will give" when viewing others' lists
+- Original list owner cannot see which items are claimed
+- Items can be marked as "received" but kept in list
+- Items can be deleted
 
-* Setup
+** Technical Features
+- Zero-dependency HTTP server (just libc)
+- Simple file-based persistence
+- HTMX for dynamic updates
+- Clean separation of concerns
+
+* Setup and Running
 ** Dependencies
-- Chez Scheme
+*** Chez Scheme
+The only real dependency is Chez Scheme, which can be installed from:
+- Guix (recommended, see below)
+- Your distribution's package manager
+- [[https://github.com/cisco/ChezScheme][Official GitHub repository]]
+- [[https://racket-lang.org/][Racket]] (includes compatible =chez= implementation)
+*** libc
+
+YOU HAVE UNO IT CAME FOR FREE WITH YOUR XBOX
+
+YOU HAVE IT ON YOUR SYSTEM
+
+IT IS NOT LITERALLY THE OLDEST SYSTEM KNOWN TO MAN
+
+YOU HAVE IT
 
 ** Using Guix
-Development environment can be entered with:
+The recommended way to run this project is using Guix:
 #+begin_src shell
 guix shell -m manifest.scm
 #+end_src
 
-** Running
+This ensures you have the exact version of Chez Scheme needed.
+
+** Running the Server
 From project root:
 #+begin_src shell
+# Development mode
 chez --libdirs ./src --program run.ss
+
+# Production mode (with optimizations)
+chez --optimize-level 3 --libdirs ./src --program run.ss
 #+end_src
 
+The =--libdirs= parameter is necessary to tell Chez where to look for our libraries.
 Server will start at =http://localhost:8080=
+
+* Architecture
+** File Structure
+*** Different Scheme File Extensions
+The project uses three types of Scheme files:
+- =.sls= - R6RS library files (most of our code)
+- =.ss= - Program files (our entry point)
+- =.scm= - Simple Scheme files (our data storage)
+
+*** Project Layout
+#+begin_src
+.
+├── manifest.scm          # Guix dependencies
+├── README.org           # This file
+├── run.ss              # Entry point
+└── src
+    ├── app
+    │   └── main.sls    # Main application logic
+    └── lib             # Core libraries
+        ├── auth.sls    # Authentication
+        ├── handler.sls # Request handling
+        ├── http.sls    # HTTP protocol
+        ├── router.sls  # URL routing
+        ├── server.sls  # Server core
+        ├── socket.sls  # Network socket binding
+        ├── storage.sls # Data persistence
+        └── utils.sls   # Shared utilities
+#+end_src
+
+** Implementation Details
+*** Network Layer
+Instead of using a heavy HTTP server library, we implement our own using Unix sockets.
+This is done by binding to libc's socket functions in =socket.sls=:
+
+#+begin_src scheme
+(load-shared-object "libc.so.6")
+(define socket
+  (foreign-procedure "socket" (int int int) int))
+;; ... more bindings
+#+end_src
+
+This gives us complete control over the network layer while learning how
+HTTP servers actually work.
+
+Real reason: I couldn't find a good HTTP library that was less than 6 years untouched
+
+*** HTTP Implementation
+We implement a minimal HTTP/1.1 server that handles:
+- Request parsing
+- Header manipulation
+- Cookie management
+- Response generation
+- Basic routing
+
+The implementation is spread across =http.sls= and =router.sls=. The router
+uses a simple pattern matching system that supports URL parameters:
+
+#+begin_src scheme
+"/items/:item-id" ; :item-id becomes a parameter
+#+end_src
+
+*** Data Persistence
+The application uses a simple but effective file-based storage system.
+Each piece of data is stored as a Scheme expression in its own file:
+
+#+begin_src
+data/
+├── lists/                    # User wishlists
+│   └── 19307D40DF0/         # List ID
+│       ├── items/           # List items
+│       │   ├── 193081B4468.scm
+│       │   └── 1930821B0F0.scm
+│       └── meta.scm         # List metadata
+├── sessions/                # User sessions
+│   └── 193063634A0.scm
+└── users/                   # User accounts
+    └── magnusi.scm
+#+end_src
+
+The data is stored as native Scheme expressions which can be read directly
+using the built-in =read= function:
+
+#+begin_src scheme
+;; Example user file
+((username . "magnusi")
+ (password . "hunter2"))
+
+;; Reading is as simple as:
+(with-input-from-file "user.scm" read)
+#+end_src
+
+This approach was chosen because:
+1. It maps perfectly to Scheme's native data structures
+2. Atomic writes prevent data races (each file operation is atomic)
+3. Filesystem handles concurrent access for us
+4. Files are easy to inspect and backup
+5. Splitting data this way creates a natural hypermedia structure
+   where each resource has its own URI-like path
+
+The tradeoff is that we can't do complex queries, but for a wishlist
+app, we don't need to.
+
+*** HTMX Integration
+HTMX allows us to make the app dynamic without writing JavaScript. It works
+by annotating HTML with special attributes:
+
+#+begin_src html
+<button hx-post="/items/new"
+        hx-target="#items"
+        hx-swap="beforeend">
+  Add Item
+</button>
+#+end_src
+
+Our Scheme code generates this HTML dynamically. The server then responds
+to HTMX requests with HTML fragments that replace parts of the page.
+
+Key HTMX features we use:
+- =hx-post= for form submission
+- =hx-delete= for item removal
+- =hx-target= for DOM updates
+- =hx-swap= for insertion strategies
+- =hx-swap-oob= for out-of-band updates
+
+*** Application Flow
+1. User requests homepage
+2. If not logged in, shows login page
+3. After login, shows list of wishlists
+4. Users can:
+   - Create new lists
+   - Add items to their lists
+   - View others' lists
+   - Claim items on others' lists
+   - Mark their received items
+   - Delete their items
+
+All updates happen dynamically without page reloads.
+
+* Web Application Architecture
+** General Principles
+Web applications typically follow these patterns:
+1. Request handling (routing)
+2. Authentication/Authorization
+3. Business logic
+4. Data persistence
+5. Response generation
+
+Our implementation follows this structure:
+- =router.sls= handles URLs
+- =auth.sls= manages sessions
+- =main.sls= contains business logic
+- =storage.sls= handles persistence
+- =server.sls= generates responses
+
+** The Hypermedia Approach
+This app embraces the web's hypermedia nature:
+1. Each resource has a URL
+2. State changes through standard HTTP methods
+3. Responses are HTML that contains new controls
+4. Progressive enhancement via HTMX
+
+This makes the app work like the web was originally designed:
+as a network of connected documents that update in-place.
+
+* Development
+** Adding Features
+To add new features:
+1. Add routes in =main.sls=
+2. Create handler functions
+3. Update storage if needed
+4. Generate HTML responses
+
+** Common Issues
+- Missing =--libdirs= will cause "library not found" errors
+- Socket errors usually mean port 8080 is in use
+- File permission errors in =/data= directory
+
+* License
+Copyright (c) 2024 Lukáš Hozda (LHO)
+
+Usage of the works is permitted provided that this instrument is retained with
+the works, so that any entity that uses the works is notified of this instrument.
+
+DISCLAIMER: THE WORKS ARE WITHOUT WARRANTY.
+
+Remember: Rome wasn't built in a day, but this sure as hell was.

@@ -1,3 +1,16 @@
+;;! Authentication and session management
+;;!
+;;! Handles all user-related security aspects:
+;;! - User account creation and storage
+;;! - Password verification (plaintext - NOT FOR PRODUCTION!)
+;;! - Session creation and validation
+;;! - Session cleanup and logout
+;;!
+;;! Uses simple file-based storage where:
+;;! - Each user is a separate file in data/users/
+;;! - Each session is a separate file in data/sessions/
+;;! - Files contain Scheme expressions for easy reading/writing
+
 (library (lib auth)
   (export create-session!
           get-session

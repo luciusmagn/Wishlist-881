@@ -1,3 +1,15 @@
+;;! HTTP protocol implementation
+;;!
+;;! Complete handling of HTTP communication:
+;;! - Request parsing (method, path, headers)
+;;! - Cookie management (session handling)
+;;! - Form data parsing (for POST requests)
+;;! - Response generation with proper headers
+;;!
+;;! This is a minimal HTTP/1.1 implementation that focuses on
+;;! the features we actually need, built directly on top of
+;;! the socket layer without external dependencies.
+
 (library (lib http)
   (export parse-headers
           get-path

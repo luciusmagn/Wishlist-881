@@ -1,3 +1,16 @@
+;;! Core HTTP server implementation
+;;!
+;;! Ties together all the HTTP components:
+;;! - Server lifecycle management
+;;! - Request acceptance and parsing
+;;! - Handler dispatch
+;;! - Response sending
+;;! - Error handling
+;;!
+;;! This is where the main server loop lives, accepting connections
+;;! and delegating them to appropriate handlers. It's also responsible
+;;! for detecting HTMX requests and routing them differently.
+
 (library (lib server)
   (export register-hx-handler!
           register-plain-handler!

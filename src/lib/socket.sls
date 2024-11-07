@@ -1,3 +1,15 @@
+;;! Low-level socket operations
+;;!
+;;! Direct bindings to libc socket functions:
+;;! - Socket creation and configuration
+;;! - Connection acceptance
+;;! - Data sending/receiving
+;;! - Network byte order handling
+;;!
+;;! This is our lowest level module, providing the network I/O
+;;! that everything else builds upon. It uses Chez's foreign
+;;! function interface to directly call libc functions.
+
 (library (lib socket)
   (export make-server-socket
           accept-connection

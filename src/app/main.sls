@@ -1,3 +1,14 @@
+;;! Main application logic - Heart of the wishlist application
+;;!
+;;! This module ties everything together, containing:
+;;! - All HTTP/HTMX endpoint handlers
+;;! - HTML templating functions for all pages and components
+;;! - User interaction flow (login, list management, item actions)
+;;! - Integration between storage and presentation layers
+;;!
+;;! The module uses HTMX attributes in its HTML generation to enable
+;;! dynamic updates without full page reloads.
+
 (library (app main)
   (export run-app)
   (import (chezscheme)

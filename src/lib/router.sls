@@ -1,3 +1,14 @@
+;;! URL routing and parameter extraction
+;;!
+;;! Handles mapping of URLs to handler functions:
+;;! - Pattern matching for URLs (e.g., "/items/:id/edit")
+;;! - Parameter extraction from URLs into alists
+;;! - Handler lookup and validation
+;;!
+;;! The router is what allows us to write paths with placeholders
+;;! and then access those values in our handlers. It's the bridge
+;;! between URLs and application logic.
+
 (library (lib router)
   (export find-handler)
   (import (chezscheme)
